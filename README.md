@@ -1,42 +1,37 @@
 # Order Management Service
 
-REST + WebSocket сервис управления заказами на NestJS.
+Сервис заказов на NestJS: REST API, роли, аудит, уведомления по WebSocket.
 
-## Стек
-
-- **NestJS 10** — Backend (Auth, Users, Orders, Audit, Notifications)
-- **PostgreSQL** + TypeORM — хранение пользователей, заказов, аудит-лога
-- **Redis** — кэширование списков заказов + Redis-адаптер для Socket.IO (масштабирование WS между инстансами)
-- **JWT + Passport** — аутентификация (`admin`, `manager`, `customer`)
-- **Socket.IO** — real-time уведомления об изменениях заказов
-- **Swagger** — автогенерируемая документация API
-- **Docker / docker-compose** — контейнеризация всего стека
-
-## Быстрый старт
+## Запуск
 
 ```bash
 cp .env.example .env
 docker compose up --build
 ```
 
-После старта:
+Адреса после запуска:
 
 - API: `http://localhost:3000`
 - Swagger: `http://localhost:3000/api/docs`
-- WebSocket namespace: `ws://localhost:3000/orders`
+- WebSocket: `ws://localhost:3000/notifications`
+
+## Технологии
+
+- NestJS 10
+- PostgreSQL, TypeORM
+- Redis
+- JWT, Passport
+- Socket.IO
+- Swagger
+- Docker
 
 ## Роли и доступ
 
-| Действие                          | customer          | manager | admin |
-|-----------------------------------|--------------------|---------|-------|
-| Создать заказ                     | ✅ (себе)          | ✅      | ✅    |
-| Смотреть свои заказы              | ✅                 | ✅      | ✅    |
-| Смотреть все заказы               | ❌                 | ✅      | ✅    |
-| Менять статус заказа (workflow)   | ❌ (только отмена своего NEW) | ✅ | ✅ |
-| Смотреть аудит-лог                | ❌                 | ✅      | ✅    |
-| Управлять ролями пользователей    | ❌                 | ❌      | ✅    |
+В проекте есть три роли: `admin`, `manager`, `viewer`.
 
-Guard'ы: `JwtAuthGuard` (глобальный, кроме `@Public()`) + `RolesGuard` (по `@Roles(...)`).
+`admin` может управлять пользователями, заказами и смотреть журнал аудита.
+`manager` работает с заказами.
+`viewer` имеет доступ только на чтение там, где он разрешен контроллерами.
 
 ## Жизненный цикл заказа
 
@@ -44,57 +39,55 @@ Guard'ы: `JwtAuthGuard` (глобальный, кроме `@Public()`) + `Roles
 NEW ──► PROCESSING ──► SHIPPED ──► DELIVERED
   └────────────────► CANCELLED
 ```
-Переходы валидируются в `OrdersService.updateStatus` через `ORDER_STATUS_TRANSITIONS`.
+Переходы валидируются в `OrdersService.updateStatus` через `ALLOWED_TRANSITIONS`.
 
 ## Аудит
 
-Каждое значимое действие (регистрация, логин/неудачный логин, создание заказа, смена статуса, смена роли пользователя) пишется в таблицу `audit_logs` через `AuditService.record()`: кто, что, над какой сущностью, old/new value, IP. Просмотр — `GET /audit-logs` (admin/manager).
+Мутирующие запросы пишутся в `audit_logs` через глобальный interceptor.
+Журнал доступен по `GET /audit-logs` для `admin`.
 
-## Real-time уведомления
+## WebSocket
 
-Клиент подключается к namespace `/orders`, передавая JWT:
+Клиент подключается к namespace `/notifications` и передает JWT:
 
 ```js
 import { io } from 'socket.io-client';
 
-const socket = io('http://localhost:3000/orders', {
+const socket = io('http://localhost:3000/notifications', {
   auth: { token: '<JWT access token>' },
 });
 
-socket.on('order.created', (payload) => console.log(payload));
-socket.on('order.statusChanged', (payload) => console.log(payload));
+socket.on('orderEvent', (payload) => console.log(payload));
 ```
 
-Сервер кладёт сокет в комнату `user:{userId}` и, если роль `admin`/`manager`, дополнительно в `role:admin` / `role:manager`. При изменении заказа `NotificationsGateway.emitOrderEvent` рассылает событие владельцу заказа и всем менеджерам/админам. Redis pub/sub (`@socket.io/redis-adapter`) обеспечивает доставку между несколькими инстансами приложения за балансировщиком.
+События по заказам публикуются через Redis Pub/Sub, поэтому уведомления доходят до подключений на разных инстансах приложения.
 
 ## Кэширование
 
-Списки заказов (`GET /orders`) кэшируются в Redis на 30 секунд по составному ключу (роль, customerId, фильтр статуса, страница). Кэш инвалидируется по паттерну при создании заказа или смене статуса.
+`GET /orders` кэшируется в Redis на 30 секунд. Кэш сбрасывается при создании, удалении заказа и изменении статуса.
 
-## Основные эндпоинты
+## Эндпоинты
 
 - `POST /auth/register`, `POST /auth/login`
-- `GET /users`, `GET /users/:id`, `PATCH /users/:id/role` (admin)
-- `POST /orders`, `GET /orders`, `GET /orders/:id`, `PATCH /orders/:id/status`
+- `GET /users`, `GET /users/:id`, `PATCH /users/:id/role`
+- `POST /orders`, `GET /orders`, `GET /orders/:id`, `PATCH /orders/:id/status`, `DELETE /orders/:id`
 - `GET /audit-logs?entity=Order&entityId=...`
 - `GET /health`
 
-Полное описание с моделями запросов/ответов — в Swagger UI.
+Детали запросов и ответов есть в Swagger.
 
-## Локальная разработка без Docker
+## Без Docker
 
 ```bash
 npm install
-# поднять postgres и redis отдельно, прописать их адреса в .env
 npm run start:dev
 ```
 
 ## Миграции
 
-Проект по умолчанию использует `synchronize: true` вне production для скорости разработки. Для продакшена — миграции TypeORM:
+Вне production включен `synchronize`. Для production лучше использовать миграции:
 
 ```bash
 npm run migration:generate -- src/migrations/Init
 npm run migration:run
 ```
-(не забудьте выключить `synchronize` в `app.module.ts`).

@@ -12,12 +12,10 @@ export class AuditLog {
   @Column({ nullable: true })
   userEmail: string | null;
 
-  // Название действия, например 'ORDERSCONTROLLER_POST', либо явное через @AuditAction
   @Index()
   @Column()
   action: string;
 
-  // Затронутая сущность, например 'Orders'
   @Column()
   entity: string;
 

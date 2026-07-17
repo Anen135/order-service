@@ -10,7 +10,7 @@ import { RedisService } from '../redis/redis.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { Role } from '../users/role.enum';
 
-const LIST_CACHE_TTL = 30; // сек — короткий TTL, т.к. заказы меняются часто
+const LIST_CACHE_TTL = 30;
 
 export interface RequestUser {
   id: string;
@@ -33,7 +33,7 @@ export class OrdersService {
     const order = this.ordersRepo.create({
       number,
       customerName: dto.customerName,
-      customerId: null, // резерв под сценарий self-service клиентов; в текущей модели заказ оформляет сотрудник
+      customerId: null,
       items: dto.items as any,
       totalAmount,
       comment: dto.comment ?? null,
@@ -126,8 +126,6 @@ export class OrdersService {
   }
 
   private async generateOrderNumber(): Promise<string> {
-    // Простой инкрементальный номер на основе счётчика в Redis —
-    // без блокировок таблицы и гонок при параллельных запросах
     const seq = await this.redis.client.incr('orders:number_seq');
     return `ORD-${String(seq).padStart(6, '0')}`;
   }

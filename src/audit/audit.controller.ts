@@ -14,7 +14,7 @@ export class AuditController {
   constructor(private readonly auditService: AuditService) {}
 
   @Get()
-  @Roles(Role.ADMIN) // журнал аудита доступен только администраторам
+  @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Просмотр журнала аудита действий' })
   findAll(
     @Query('userId') userId?: string,

@@ -23,7 +23,6 @@ export class AuditService {
   constructor(@InjectRepository(AuditLog) private readonly repo: Repository<AuditLog>) {}
 
   async record(entry: AuditEntry) {
-    // Аудит не должен ломать основной запрос — ошибки просто логируем в консоль процесса
     try {
       const log = this.repo.create(entry);
       await this.repo.save(log);

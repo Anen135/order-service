@@ -11,7 +11,7 @@ export class User {
   email: string;
 
   @Column()
-  @Exclude() // не отдаём хэш пароля наружу (нужен ClassSerializerInterceptor)
+  @Exclude()
   passwordHash: string;
 
   @Column()

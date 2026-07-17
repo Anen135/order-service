@@ -16,12 +16,11 @@ export class Order {
   id: string;
 
   @Column({ unique: true })
-  number: string; // человекочитаемый номер заказа, например ORD-000123
+  number: string;
 
   @Column()
   customerName: string;
 
-  // Заказчик, если создан аутентифицированным пользователем (может быть null для гостевых заказов)
   @Index()
   @Column({ nullable: true })
   customerId: string | null;
@@ -39,7 +38,6 @@ export class Order {
   @Column({ nullable: true })
   comment: string | null;
 
-  // id пользователя, создавшего заказ (менеджер/админ, оформивший заказ клиента)
   @Column({ nullable: true })
   createdBy: string | null;
 

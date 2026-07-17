@@ -2,12 +2,6 @@ import { Injectable, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
 
-/**
- * Обёртка над ioredis. Держит отдельное подключение для pub/sub, потому что
- * в режиме subscribe соединение не может выполнять обычные команды.
- * Pub/Sub используется для рассылки WS-уведомлений между несколькими
- * инстансами приложения (горизонтальное масштабирование).
- */
 @Injectable()
 export class RedisService implements OnModuleDestroy {
   public client: Redis;

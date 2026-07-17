@@ -1,5 +1,5 @@
 export enum Role {
-  ADMIN = 'admin',     // полный доступ, включая удаление заказов и просмотр аудита
-  MANAGER = 'manager', // создание/редактирование заказов, смена статусов
-  VIEWER = 'viewer',   // только чтение
+  ADMIN = 'admin',
+  MANAGER = 'manager',
+  VIEWER = 'viewer',
 }

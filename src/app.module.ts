@@ -30,7 +30,7 @@ import { HealthController } from './health.controller';
   providers: [
     {
       provide: APP_INTERCEPTOR,
-      useClass: AuditInterceptor, // глобальный аудит всех мутирующих запросов
+      useClass: AuditInterceptor,
     },
   ],
 })

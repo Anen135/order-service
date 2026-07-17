@@ -12,12 +12,6 @@ export interface OrderEventPayload {
   at: string;
 }
 
-/**
- * Публикует событие в Redis-канал. Сам Gateway подписан на этот канал и
- * рассылает событие всем подключённым WS-клиентам на этом (и любом другом)
- * инстансе приложения — так уведомления работают даже за балансировщиком
- * с несколькими репликами сервиса.
- */
 @Injectable()
 export class NotificationsService {
   constructor(private readonly redis: RedisService) {}

@@ -16,12 +16,6 @@ function sanitize(obj: any) {
   return clone;
 }
 
-/**
- * Глобальный interceptor: логирует все мутирующие запросы (POST/PATCH/PUT/DELETE)
- * в таблицу audit_logs — кто, что, когда сделал, с каким телом запроса и
- * результатом. Название действия можно переопределить декоратором @AuditAction,
- * иначе оно генерируется автоматически из имени контроллера и HTTP-метода.
- */
 @Injectable()
 export class AuditInterceptor implements NestInterceptor {
   constructor(

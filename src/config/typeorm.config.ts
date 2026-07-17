@@ -12,7 +12,7 @@ export const typeOrmConfig: DataSourceOptions = {
   database: process.env.DB_NAME || 'orders_db',
   entities: [__dirname + '/../**/*.entity{.ts,.js}'],
   migrations: [__dirname + '/../migrations/*{.ts,.js}'],
-  synchronize: process.env.NODE_ENV !== 'production', // в проде — только миграции
+  synchronize: process.env.NODE_ENV !== 'production',
   logging: false,
 };
 
